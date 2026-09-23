@@ -4,6 +4,10 @@ A browser-based audio workbench for finding the right connection between two son
 
 **Status: functional prototype.** The compatibility score uses digital signal processing, not a trained deep-learning model. Spotify and Apple Music currently use manual search handoffs, not connected playlist synchronization.
 
+![SeemLess two-deck transition studio](docs/studio.png)
+
+[Validation record](docs/VALIDATION.md) · [Architecture](docs/ARCHITECTURE.md) · [Portfolio guide](docs/PORTFOLIO.md)
+
 ## Try it
 
 Requires **Node.js 22+**. There are no package dependencies and no API keys.
