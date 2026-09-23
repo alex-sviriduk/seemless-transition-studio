@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101214" />
+    <meta
+      name="description"
+      content="Choose two songs, shape the crossfade, and hear what comes next. A private audio transition studio."
+    />
+    <title>SeemLess — Transition studio</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23c8f58b'/%3E%3Cpath d='M7 11h11l-5 10h12M7 16h18' fill='none' stroke='%23101214' stroke-width='3'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./" aria-label="SeemLess home"
+        ><span class="mark">≋</span>SeemLess<span class="brand-dot">.</span></a
+      >
+      <nav aria-label="Workspace">
+        <button class="nav active" id="studioTab">Transition studio</button
+        ><button class="nav" id="playlistsTab">
+          My playlists <span id="playlistCount">0</span>
+        </button>
+      </nav>
+      <span class="device-label">◈ &nbsp; Local audio · private by design</span
+      ><button
+        class="icon-button"
+        id="help"
+        aria-label="About scoring and connections"
+      >
+        ?
+      </button>
+    </header>
+    <main>
+      <section id="studio">
+        <div class="page-title">
+          <div>
+            <p class="eyebrow">THE SPACE BETWEEN TWO SONGS</p>
+            <h1>Transition studio</h1>
+          </div>
+          <button class="secondary" id="libraryOpen">
+            ＋ &nbsp; Audio library
+          </button>
+        </div>
+        <div class="workspace">
+          <div class="mix-column">
+            <div class="decks" id="decks"></div>
+            <section class="mix-panel">
+              <div class="section-title">
+                <h2>Shape the transition</h2>
+                <span class="small">A → B</span>
+              </div>
+              <div class="mix-options">
+                <div class="fade-control">
+                  <label for="fade"
+                    >Crossfade <output id="fadeValue">4.0 s</output></label
+                  ><input
+                    id="fade"
+                    type="range"
+                    min="0"
+                    max="12"
+                    step="0.1"
+                    value="4"
+                  />
+                  <div class="scale">
+                    <span>Hard cut</span><span id="fadeMax">12 s</span>
+                  </div>
+                </div>
+                <fieldset>
+                  <legend>Fade curve</legend>
+                  <div class="segmented">
+                    <button
+                      id="equalPower"
+                      class="selected"
+                      aria-pressed="true"
+                    >
+                      Equal power</button
+                    ><button id="linear" aria-pressed="false">Linear</button>
+                  </div>
+                </fieldset>
+              </div>
+              <div
+                class="timeline"
+                id="timeline"
+                aria-label="Transition preview timeline"
+              >
+                <div class="timeline-a" id="timelineA">
+                  <span>A · outgoing</span>
+                </div>
+                <div class="timeline-b" id="timelineB">
+                  <span>B · incoming</span>
+                </div>
+                <div class="playhead" id="playhead"></div>
+              </div>
+              <div class="transport">
+                <button class="play-button" id="play">
+                  <span id="playIcon">▶</span
+                  ><span id="playText">Preview transition</span></button
+                ><span class="time-readout" id="playTime">0:00 / 0:00</span
+                ><label class="volume"
+                  >Volume<input
+                    aria-label="Preview volume"
+                    id="volume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.65"
+                /></label>
+              </div>
+              <p class="hint" id="previewHint">
+                Hear the selected end of A flow into the selected start of B.
+              </p>
+            </section>
+            <div class="privacy-note">
+              <span>↳</span>
+              <p>
+                Your audio stays in this browser. Start with the original demo
+                loops or choose your own audio files.
+              </p>
+              <button class="text-button" id="contrast">
+                Try a contrasting pair ↗
+              </button>
+            </div>
+          </div>
+          <aside class="analysis-panel">
+            <div class="section-title">
+              <h2>Transition fit</h2>
+              <button
+                class="info-button"
+                id="scoreInfo"
+                aria-label="How the score works"
+              >
+                i
+              </button>
+            </div>
+            <span class="estimate-badge">AUDIO FEATURE ESTIMATE</span>
+            <div class="score-dial" id="scoreDial">
+              <div><strong id="score">—</strong><span>OUT OF 100</span></div>
+            </div>
+            <h3 id="verdict">Analyzing your excerpts</h3>
+            <p class="analysis-description" id="summary">
+              Comparing tempo, tonal balance, energy, and texture.
+            </p>
+            <div class="metrics" id="metrics"></div>
+            <div class="insight">
+              <span>✳</span>
+              <p id="insight">
+                Adjust either range to find a better meeting point.
+              </p>
+            </div>
+            <button class="save-button" id="savePair">
+              ＋ &nbsp; Save to playlist
+            </button>
+            <p class="model-note">
+              Signal-based estimate · not a trained AI model<br /><button
+                class="text-button"
+                id="method"
+              >
+                View method & limitations ↗
+              </button>
+            </p>
+          </aside>
+        </div>
+      </section>
+      <section id="playlists" hidden>
+        <div class="page-title">
+          <div>
+            <p class="eyebrow">KEEP THE GOOD CONNECTIONS</p>
+            <h1>My playlists</h1>
+          </div>
+          <button class="secondary" id="backStudio">Back to studio</button>
+        </div>
+        <p class="playlist-note">
+          Saved on this device. Export your selections or find each song in your
+          music service.
+        </p>
+        <div id="playlistList"></div>
+      </section>
+      <footer>
+        <span>SEEMLESS STUDIO <span class="muted">/</span> PROTOTYPE 01</span
+        ><span>Good music. Better together.</span>
+      </footer>
+    </main>
+    <dialog id="libraryDialog">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow" id="libraryEyebrow">YOUR AUDIO</p>
+          <h2>Choose a track</h2>
+        </div>
+        <button class="close" aria-label="Close audio library">×</button>
+      </div>
+      <label class="upload"
+        ><input
+          id="upload"
+          type="file"
+          accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg"
+          multiple
+        /><strong>＋ &nbsp; Choose audio files</strong
+        ><span>MP3, WAV, M4A, FLAC, OGG · up to 60 MB each</span></label
+      >
+      <p class="hint">
+        Files stay on your device and must be selected again after reloading.
+      </p>
+      <div id="libraryList"></div>
+      <p class="hint">
+        Demo tracks are original synthesized loops, not commercial recordings.
+      </p>
+    </dialog>
+    <dialog id="saveDialog">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">SAVE THIS CONNECTION</p>
+          <h2>Add to playlist</h2>
+        </div>
+        <button class="close" aria-label="Close save dialog">×</button>
+      </div>
+      <p id="saveDescription"></p>
+      <label class="field"
+        >Playlist<select id="playlistSelect">
+          <option value="new">Create a new playlist</option>
+        </select></label
+      ><label class="field" id="nameField"
+        >New playlist name<input
+          id="playlistName"
+          maxlength="80"
+          placeholder="e.g. Late night drive"
+      /></label>
+      <p class="hint">
+        Saves the song names, ranges, crossfade, and score in this browser.
+        Audio files are not stored.
+      </p>
+      <button class="save-button" id="confirmSave">Save transition</button>
+    </dialog>
+    <dialog id="aboutDialog">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow">BEHIND THE NUMBER</p>
+          <h2>A guide for your ears</h2>
+        </div>
+        <button class="close" aria-label="Close score explanation">×</button>
+      </div>
+      <p>
+        The score compares audio features from your selected excerpts. It is a
+        useful starting point, not a probability that listeners will enjoy the
+        transition.
+      </p>
+      <dl>
+        <dt>Harmony · 35%</dt>
+        <dd>
+          Similarity of pitch-class energy (chroma). This measures shared tonal
+          content, not melodic phrasing or a reliable musical key.
+        </dd>
+        <dt>Tempo · 25%</dt>
+        <dd>
+          Estimated pulse from energy changes. Half-time and double-time are
+          treated as compatible. Sparse or beatless audio can be uncertain.
+        </dd>
+        <dt>Energy · 20%</dt>
+        <dd>The gap in average loudness (RMS) between the excerpts.</dd>
+        <dt>Texture · 20%</dt>
+        <dd>Similarity in spectral brightness and high-frequency content.</dd>
+      </dl>
+      <p>
+        These features describe the selected source audio. Changing the fade
+        curve or duration changes the preview, but does not change this score.
+        Silence and very short excerpts cannot be scored reliably.
+      </p>
+      <div class="connection-note">
+        <h3>Deep learning: not connected</h3>
+        <p>
+          This prototype uses signal analysis. A learned score would require a
+          trained audio model and evaluation against human-rated transitions.
+        </p>
+        <h3>Music services: manual handoff</h3>
+        <p>
+          Playlists here are device-local. Spotify and Apple Music links open a
+          song search; they do not add tracks automatically. Direct sync
+          requires developer setup and account authorization. Streaming-service
+          audio is not imported or mixed.
+        </p>
+      </div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
