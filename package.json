@@ -1,0 +1,15 @@
+{
+  "name": "seemless-transition-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A local-first song transition studio with Web Audio crossfades and explainable signal analysis.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test",
+    "check": "node --check dist/app.js && node --check dist/audio.js && node --check dist/analysis-worker.js && node --check scripts/serve.mjs"
+  }
+}
