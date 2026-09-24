@@ -194,6 +194,27 @@
         </div>
         <button class="close" aria-label="Close audio library">×</button>
       </div>
+      <label class="field library-search"
+        >Search songs
+        <input
+          id="librarySearch"
+          type="search"
+          maxlength="200"
+          placeholder="Song, artist, or filename"
+          autocomplete="off"
+        />
+      </label>
+      <div class="library-filters" role="group" aria-label="Audio source">
+        <button data-library-filter="all" aria-pressed="true">All audio</button>
+        <button data-library-filter="uploads" aria-pressed="false">
+          My uploads
+        </button>
+        <button data-library-filter="demos" aria-pressed="false">
+          Demo tracks
+        </button>
+      </div>
+      <p id="libraryCount" class="hint" role="status"></p>
+      <div id="libraryList"></div>
       <label class="upload"
         ><input
           id="upload"
@@ -206,7 +227,25 @@
       <p class="hint">
         Files stay on your device and must be selected again after reloading.
       </p>
-      <div id="libraryList"></div>
+      <section class="service-search" aria-labelledby="serviceSearchTitle">
+        <h3 id="serviceSearchTitle">Find songs on music services</h3>
+        <p id="serviceSearchHint">
+          Enter a song or artist above to search Spotify or Apple Music.
+        </p>
+        <div class="service-search-links" id="serviceSearchLinks" hidden>
+          <a id="searchSpotify" target="_blank" rel="noopener noreferrer"
+            >Search Spotify ↗</a
+          >
+          <a id="searchApple" target="_blank" rel="noopener noreferrer"
+            >Search Apple Music ↗</a
+          >
+        </div>
+        <p class="hint">
+          Opens results in a new tab. To preview a transition here, choose an
+          audio file from your device. Service searches do not import songs or
+          sync playlists.
+        </p>
+      </section>
       <p class="hint">
         Demo tracks are original synthesized loops, not commercial recordings.
       </p>

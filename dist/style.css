@@ -1158,3 +1158,72 @@ dd {
     transition: none !important;
   }
 }
+.library-search {
+  margin: 0 0 14px;
+}
+.library-search input {
+  font-size: 16px;
+}
+.library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.library-filters button {
+  background: #252b2e;
+  border: 1px solid #424a4d;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.library-filters button[aria-pressed="true"] {
+  background: var(--lime);
+  color: #172013;
+  border-color: var(--lime);
+}
+#libraryList {
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+.library-empty {
+  padding: 22px 0 8px;
+}
+.library-empty strong {
+  font-size: 16px;
+  font-weight: 500;
+}
+.library-empty p {
+  font-size: 14px;
+  margin: 8px 0;
+}
+.service-search {
+  border-top: 1px solid var(--border);
+  margin-top: 22px;
+  padding-top: 22px;
+}
+.service-search h3 {
+  font-size: 17px;
+}
+.service-search p {
+  font-size: 14px;
+}
+.service-search-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.service-search-links a {
+  padding: 11px 13px;
+  border: 1px solid #4b5655;
+  background: #27322b;
+  border-radius: 7px;
+  text-decoration: none;
+  font-size: 14px;
+}
+.service-search-links a:last-child {
+  background: #332935;
+}
+.service-search-links a:hover {
+  border-color: var(--lime);
+}

@@ -44,6 +44,7 @@ let context,
   requestId = 0,
   playRequest = 0,
   libraryTarget = 0,
+  libraryFilter = "all",
   toastTimer;
 let playlists = [];
 try {
@@ -383,20 +384,71 @@ function openLibrary(target) {
     `CHOOSE ${target ? "B · INCOMING" : "A · OUTGOING"}`;
   renderLibrary();
   $("libraryDialog").showModal();
+  $("librarySearch").focus();
 }
 function renderLibrary() {
-  $("libraryList").innerHTML = tracks
-    .map(
-      (t, i) =>
-        `<div class="library-item"><div class="cover">${String(i + 1).padStart(2, "0")}</div><div class="track-copy"><strong>${esc(t.title)}</strong><small>${esc(t.artist)} · ${time(t.duration)}${t.demo ? " · Original demo" : ""}</small></div><button data-track="${i}">Use ${libraryTarget ? "B" : "A"}</button></div>`,
-    )
-    .join("");
+  const query = $("librarySearch").value.trim();
+  const normalize = (value) =>
+    String(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase();
+  const words = normalize(query).split(/\s+/).filter(Boolean);
+  const results = tracks
+    .map((t, i) => ({ t, i }))
+    .filter(
+      ({ t }) =>
+        (libraryFilter === "all" ||
+          (libraryFilter === "uploads" ? !t.demo : t.demo)) &&
+        words.every((word) =>
+          normalize(`${t.title} ${t.artist} ${t.fileName || ""}`).includes(
+            word,
+          ),
+        ),
+    );
+  $("libraryCount").textContent =
+    `${results.length} matching track${results.length === 1 ? "" : "s"} · ${tracks.filter((t) => !t.demo).length} uploaded`;
+  $("libraryList").innerHTML = results.length
+    ? results
+        .map(
+          ({ t, i }) =>
+            `<div class="library-item"><div class="cover">${String(i + 1).padStart(2, "0")}</div><div class="track-copy"><strong>${esc(t.title)}</strong><small>${esc(t.artist)} · ${time(t.duration)}${t.demo ? " · Original demo" : ""}</small></div><button data-track="${i}">Use ${libraryTarget ? "B" : "A"}</button></div>`,
+        )
+        .join("")
+    : `<div class="library-empty"><strong>${query ? "No matching audio" : "No uploaded tracks yet"}</strong><p>${query ? "Try a different title, artist, or filename, or search a music service below." : "Choose audio files below to build your library."}</p></div>`;
+  $("serviceSearchLinks").hidden = !query;
+  $("serviceSearchHint").textContent = query
+    ? `Search for “${query}” on your music service.`
+    : "Enter a song or artist above to search Spotify or Apple Music.";
+  for (const [id, url] of [
+    [
+      "searchSpotify",
+      `https://open.spotify.com/search/${encodeURIComponent(query)}`,
+    ],
+    [
+      "searchApple",
+      `https://music.apple.com/us/search?term=${encodeURIComponent(query)}`,
+    ],
+  ]) {
+    if (query) $(id).href = url;
+    else $(id).removeAttribute("href");
+  }
   document
     .querySelectorAll("[data-track]")
     .forEach(
       (b) => (b.onclick = () => selectTrack(libraryTarget, +b.dataset.track)),
     );
 }
+$("librarySearch").oninput = renderLibrary;
+document.querySelectorAll("[data-library-filter]").forEach((button) => {
+  button.onclick = () => {
+    libraryFilter = button.dataset.libraryFilter;
+    document
+      .querySelectorAll("[data-library-filter]")
+      .forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    renderLibrary();
+  };
+});
 function selectTrack(target, index) {
   stop();
   const t = tracks[index];
@@ -439,15 +491,32 @@ $("upload").onchange = async (e) => {
       source.start();
       const rendered = await offline.startRendering();
       const samples = rendered.getChannelData(0);
+      const fileTitle = file.name.replace(/\.[^.]+$/, "");
+      const parts = fileTitle.split(" - ");
       tracks.push({
         id: crypto.randomUUID(),
-        title: file.name.replace(/\.[^.]+$/, ""),
-        artist: "Your audio",
+        title:
+          parts.length > 1
+            ? parts.slice(1).join(" - ").trim() || fileTitle
+            : fileTitle,
+        artist:
+          parts.length > 1 ? parts[0].trim() || "Your audio" : "Your audio",
+        fileName: file.name,
         samples,
         sampleRate: 22050,
         duration: samples.length / 22050,
         demo: false,
       });
+      libraryFilter = "uploads";
+      $("librarySearch").value = "";
+      document
+        .querySelectorAll("[data-library-filter]")
+        .forEach((b) =>
+          b.setAttribute(
+            "aria-pressed",
+            String(b.dataset.libraryFilter === "uploads"),
+          ),
+        );
       renderLibrary();
       toast(`${file.name} is ready. Choose Use A or Use B.`);
     } catch (err) {
