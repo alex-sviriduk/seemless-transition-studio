@@ -119,8 +119,7 @@
             <div class="privacy-note">
               <span>↳</span>
               <p>
-                Your audio stays in this browser. Start with the original demo
-                loops or choose your own audio files.
+                Your audio stays in this browser. Browse built-in music excerpts, try the original demos, or upload full songs.
               </p>
               <button class="text-button" id="contrast">
                 Try a contrasting pair ↗
@@ -200,19 +199,23 @@
           id="librarySearch"
           type="search"
           maxlength="200"
-          placeholder="Song, artist, or filename"
+          placeholder="Song, artist, genre, or filename"
           autocomplete="off"
         />
       </label>
-      <div class="library-filters" role="group" aria-label="Audio source">
-        <button data-library-filter="all" aria-pressed="true">All audio</button>
-        <button data-library-filter="uploads" aria-pressed="false">
-          My uploads
-        </button>
-        <button data-library-filter="demos" aria-pressed="false">
-          Demo tracks
-        </button>
-      </div>
+      <label class="field library-search"
+        >Audio source
+        <select id="librarySource">
+          <option value="catalog">Built-in music · FMA excerpts</option>
+          <option value="uploads">My uploads</option>
+          <option value="demos">Original demos</option>
+          <option value="all">All audio</option>
+        </select>
+      </label>
+      <p class="hint">
+        Explore 22 real tracks by title, artist, or genre. Built-in tracks are
+        ~30-second excerpts, not complete songs. Upload full songs below.
+      </p>
       <p id="libraryCount" class="hint" role="status"></p>
       <div id="libraryList"></div>
       <label class="upload"
@@ -241,7 +244,7 @@
           >
         </div>
         <p class="hint">
-          Opens results in a new tab. To preview a transition here, choose an
+          Opens results in a new tab. To preview a transition here, choose built-in music or an
           audio file from your device. Service searches do not import songs or
           sync playlists.
         </p>

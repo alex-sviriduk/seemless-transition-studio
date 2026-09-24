@@ -1,3 +1,4 @@
+import { CATALOG } from "./catalog.js";
 import {
   DEMOS,
   synthesizeTrack,
@@ -24,6 +25,45 @@ const tracks = DEMOS.map((d) => ({
   duration: 48,
   demo: true,
 }));
+tracks.push(...CATALOG.map((t) => ({ ...t })));
+let loadingTrack = false;
+let librarySession = 0;
+const pendingAudio = new Map();
+async function ensureTrack(t) {
+  if (t.samples) return t;
+  if (pendingAudio.has(t.id)) return pendingAudio.get(t.id);
+  const promise = (async () => {
+    const response = await fetch(t.audioUrl, {
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!response.ok) throw new Error("Audio download failed. Try again.");
+    const decoded = await getContext().decodeAudioData(
+      await response.arrayBuffer(),
+    );
+    if (decoded.duration < 2 || decoded.duration > 45)
+      throw new Error("Invalid catalog excerpt.");
+    const offline = new OfflineAudioContext(
+      1,
+      Math.ceil(decoded.duration * 22050),
+      22050,
+    );
+    const source = offline.createBufferSource();
+    source.buffer = decoded;
+    source.connect(offline.destination);
+    source.start();
+    const rendered = await offline.startRendering();
+    t.samples = rendered.getChannelData(0);
+    t.sampleRate = 22050;
+    t.duration = t.samples.length / 22050;
+    return t;
+  })();
+  pendingAudio.set(t.id, promise);
+  try {
+    return await promise;
+  } finally {
+    pendingAudio.delete(t.id);
+  }
+}
 const state = {
   decks: [
     { track: tracks[0], start: 32, end: 48 },
@@ -44,7 +84,7 @@ let context,
   requestId = 0,
   playRequest = 0,
   libraryTarget = 0,
-  libraryFilter = "all",
+  libraryFilter = "catalog",
   toastTimer;
 let playlists = [];
 try {
@@ -101,7 +141,7 @@ function getContext() {
   return context;
 }
 function deckMarkup(d, i) {
-  return `<article class="deck ${i ? "b" : "a"}"><div class="deck-head"><span class="deck-tag"><span class="deck-letter">${i ? "B" : "A"}</span>${i ? "INCOMING" : "OUTGOING"}</span><button class="text-button" data-change="${i}">Change track ↗</button></div><div class="song"><div class="cover" aria-hidden="true">${i ? "B" : "A"}</div><div class="song-info"><h3 title="${esc(d.track.title)}">${esc(d.track.title)}</h3><p>${esc(d.track.artist)} · ${d.track.demo ? "Demo" : "Local file"}</p></div></div><div class="wave-area"><canvas id="wave${i}" aria-label="Waveform of ${esc(d.track.title)}"></canvas><div class="wave-selection" id="selection${i}"></div></div><div class="wave-scale"><span>0:00</span><span>${time(d.track.duration / 2)}</span><span>${time(d.track.duration)}</span></div><div class="range-fields">${["start", "end"].map((k) => `<label>${k === "start" ? "From" : "To"} <span class="small">(seconds)</span><input aria-label="${i ? "B" : "A"} ${k} seconds" type="number" id="${k}${i}" value="${d[k]}" min="0" max="${d.track.duration}" step="0.1"><input aria-label="${i ? "B" : "A"} ${k} range" type="range" id="${k}Slider${i}" value="${d[k]}" min="0" max="${d.track.duration}" step="0.1"></label>`).join("")}</div><div class="deck-bottom"><span>SELECTED EXCERPT</span><strong id="duration${i}">${(d.end - d.start).toFixed(1)} seconds</strong></div></article>`;
+  return `<article class="deck ${i ? "b" : "a"}"><div class="deck-head"><span class="deck-tag"><span class="deck-letter">${i ? "B" : "A"}</span>${i ? "INCOMING" : "OUTGOING"}</span><button class="text-button" data-change="${i}">Change track ↗</button></div><div class="song"><div class="cover" aria-hidden="true">${i ? "B" : "A"}</div><div class="song-info"><h3 title="${esc(d.track.title)}">${esc(d.track.title)}</h3><p>${esc(d.track.artist)} · ${d.track.demo ? "Demo" : d.track.catalog ? "FMA excerpt" : "Local file"}</p></div></div><div class="wave-area"><canvas id="wave${i}" aria-label="Waveform of ${esc(d.track.title)}"></canvas><div class="wave-selection" id="selection${i}"></div></div><div class="wave-scale"><span>0:00</span><span>${time(d.track.duration / 2)}</span><span>${time(d.track.duration)}</span></div><div class="range-fields">${["start", "end"].map((k) => `<label>${k === "start" ? "From" : "To"} <span class="small">(seconds)</span><input aria-label="${i ? "B" : "A"} ${k} seconds" type="number" id="${k}${i}" value="${d[k]}" min="0" max="${d.track.duration}" step="0.1"><input aria-label="${i ? "B" : "A"} ${k} range" type="range" id="${k}Slider${i}" value="${d[k]}" min="0" max="${d.track.duration}" step="0.1"></label>`).join("")}</div><div class="deck-bottom"><span>SELECTED EXCERPT</span><strong id="duration${i}">${(d.end - d.start).toFixed(1)} seconds</strong></div></article>`;
 }
 function renderDecks() {
   $("decks").innerHTML = state.decks.map(deckMarkup).join("");
@@ -379,6 +419,7 @@ function renderScore() {
   }[weakest];
 }
 function openLibrary(target) {
+  librarySession++;
   libraryTarget = target;
   $("libraryEyebrow").textContent =
     `CHOOSE ${target ? "B · INCOMING" : "A · OUTGOING"}`;
@@ -399,20 +440,22 @@ function renderLibrary() {
     .filter(
       ({ t }) =>
         (libraryFilter === "all" ||
-          (libraryFilter === "uploads" ? !t.demo : t.demo)) &&
+          (libraryFilter === "uploads" && !t.demo && !t.catalog) ||
+          (libraryFilter === "catalog" && t.catalog) ||
+          (libraryFilter === "demos" && t.demo)) &&
         words.every((word) =>
-          normalize(`${t.title} ${t.artist} ${t.fileName || ""}`).includes(
-            word,
-          ),
+          normalize(
+            `${t.title} ${t.artist} ${t.fileName || ""} ${t.genre || ""}`,
+          ).includes(word),
         ),
     );
   $("libraryCount").textContent =
-    `${results.length} matching track${results.length === 1 ? "" : "s"} · ${tracks.filter((t) => !t.demo).length} uploaded`;
+    `${results.length} matching track${results.length === 1 ? "" : "s"} · ${tracks.filter((t) => !t.demo && !t.catalog).length} uploaded`;
   $("libraryList").innerHTML = results.length
     ? results
         .map(
           ({ t, i }) =>
-            `<div class="library-item"><div class="cover">${String(i + 1).padStart(2, "0")}</div><div class="track-copy"><strong>${esc(t.title)}</strong><small>${esc(t.artist)} · ${time(t.duration)}${t.demo ? " · Original demo" : ""}</small></div><button data-track="${i}">Use ${libraryTarget ? "B" : "A"}</button></div>`,
+            `<div class="library-item"><div class="cover">${String(i + 1).padStart(2, "0")}</div><div class="track-copy"><strong>${esc(t.title)}</strong><small>${esc(t.artist)} · ${time(t.duration)}${t.demo ? " · Original demo" : t.catalog ? ` · ${esc(t.genre)} · excerpt` : ""}</small>${t.catalog ? `<small><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener noreferrer">Track source ↗</a> · <a href="${esc(t.licenseUrl)}" target="_blank" rel="noopener noreferrer">${esc(t.license)}</a></small>` : ""}</div><button data-track="${i}" ${loadingTrack ? "disabled" : ""}>Use ${libraryTarget ? "B" : "A"}</button></div>`,
         )
         .join("")
     : `<div class="library-empty"><strong>${query ? "No matching audio" : "No uploaded tracks yet"}</strong><p>${query ? "Try a different title, artist, or filename, or search a music service below." : "Choose audio files below to build your library."}</p></div>`;
@@ -440,18 +483,28 @@ function renderLibrary() {
     );
 }
 $("librarySearch").oninput = renderLibrary;
-document.querySelectorAll("[data-library-filter]").forEach((button) => {
-  button.onclick = () => {
-    libraryFilter = button.dataset.libraryFilter;
-    document
-      .querySelectorAll("[data-library-filter]")
-      .forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-    renderLibrary();
-  };
-});
-function selectTrack(target, index) {
-  stop();
+$("librarySource").onchange = () => {
+  libraryFilter = $("librarySource").value;
+  renderLibrary();
+};
+async function selectTrack(target, index) {
+  if (loadingTrack) return;
   const t = tracks[index];
+  const session = librarySession;
+  loadingTrack = true;
+  renderLibrary();
+  $("libraryCount").textContent = `Loading ${t.title}…`;
+  try {
+    await ensureTrack(t);
+  } catch (err) {
+    toast(`Could not load ${t.title}. ${err.message}`);
+    return;
+  } finally {
+    loadingTrack = false;
+    renderLibrary();
+  }
+  if (!$("libraryDialog").open || session !== librarySession) return;
+  stop();
   state.decks[target] = {
     track: t,
     start: target ? 0 : Math.max(0, t.duration - 16),
@@ -469,7 +522,7 @@ $("upload").onchange = async (e) => {
       toast(`${file.name}: choose a file under 60 MB.`);
       continue;
     }
-    if (tracks.length >= 12) {
+    if (tracks.filter((t) => !t.demo && !t.catalog).length >= 8) {
       toast("Library limit reached. Reload to start a new audio session.");
       break;
     }
@@ -509,14 +562,7 @@ $("upload").onchange = async (e) => {
       });
       libraryFilter = "uploads";
       $("librarySearch").value = "";
-      document
-        .querySelectorAll("[data-library-filter]")
-        .forEach((b) =>
-          b.setAttribute(
-            "aria-pressed",
-            String(b.dataset.libraryFilter === "uploads"),
-          ),
-        );
+      $("librarySource").value = "uploads";
       renderLibrary();
       toast(`${file.name} is ready. Choose Use A or Use B.`);
     } catch (err) {
@@ -610,7 +656,11 @@ function renderPlaylists() {
         (b.onclick = () => loadPair(...b.dataset.load.split(",").map(Number))),
     );
 }
-function loadPair(pi, pj) {
+async function loadPair(pi, pj) {
+  if (loadingTrack) {
+    toast("Wait for the current track to load.");
+    return;
+  }
   const pair = playlists[pi].pairs[pj],
     found = pair.decks.map(
       (d) =>
@@ -624,6 +674,18 @@ function loadPair(pi, pj) {
       "Choose the original audio files in the library first, then load this transition again.",
     );
     return;
+  }
+  loadingTrack = true;
+  toast("Loading saved transition…");
+  try {
+    await Promise.all(found.map(ensureTrack));
+    if (found.some((t, i) => pair.decks[i].end > t.duration))
+      throw new Error("The saved range exceeds the available excerpt.");
+  } catch (err) {
+    toast(`Could not restore this transition. ${err.message}`);
+    return;
+  } finally {
+    loadingTrack = false;
   }
   stop();
   state.decks = pair.decks.map((d, i) => ({
