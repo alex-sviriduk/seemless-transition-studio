@@ -18,13 +18,15 @@ cd seemless-transition-studio
 npm start
 ```
 
-Open [localhost:4173](http://127.0.0.1:4173). The initial pair uses original, synthesized demo audio, so you can immediately click **Preview transition**. To use your own music, open **Audio library**, choose an audio file, then select **Use A** or **Use B**. Use files you are authorized to process.
+Open [localhost:4173](http://127.0.0.1:4173). The initial pair uses original, synthesized demo audio, so you can immediately click **Preview transition**. Open **Audio library** to search 22 built-in FMA music excerpts by title, artist, or genre and load either deck without an account. The source dropdown also offers uploads and original demos. To use your own music, open **Audio library**, choose an audio file, then select **Use A** or **Use B**. Use files you are authorized to process.
 
 The project is static: `dist/` contains authored application source, not generated output. Serve that directory over HTTP(S); opening `index.html` as a file will not reliably load ES modules or workers.
 
 ## What works
 
 - Two independent decks with file selection, waveform visualization, numeric excerpt boundaries, and range sliders.
+- A searchable audio library with a source dropdown and case- and accent-insensitive title, artist, genre, and filename matching. Uploaded filenames in `Artist - Title.ext` format populate the artist and title fields; embedded audio tags are not read.
+- Spotify and Apple Music search buttons in the picker open matching searches in a new tab. Results are displayed on the provider's site, not fetched into SeemLess; no developer credentials are required for these handoffs.
 - Browser decoding of supported MP3, WAV, M4A, OGG, and FLAC files. Exact codec support depends on the browser.
 - A shared Web Audio clock for scheduling both excerpts, with linear or equal-power fades and a hard-cut option.
 - Playback progress, stop behavior, master volume, and compressor/headroom to reduce overload.
@@ -32,13 +34,14 @@ The project is static: `dist/` contains authored application source, not generat
 - A 0–100 compatibility estimate using chroma, pulse, RMS loudness, and spectral texture.
 - Local playlists storing ordered pairs, excerpt ranges, fade settings, and the score method; CSV/JSON exports and reload into the studio.
 - Manual song search links to Spotify and Apple Music for uploaded tracks.
-- Four deterministic, original demo loops; no commercial recordings or copyrighted artwork are bundled.
+- 22 real, openly licensed FMA excerpts loaded on demand, plus four deterministic original demo loops. See [music credits and licenses](docs/MUSIC_CREDITS.md).
 - Responsive layout, semantic controls, keyboard input, native dialogs, and optional WebMCP range configuration.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
+  Catalog[Bundled FMA excerpts] --> Decode
   Files[User-selected audio] --> Decode[Web Audio decode + mono resample]
   Demo[Original demo generator] --> PCM[22.05 kHz PCM in memory]
   Decode --> PCM
@@ -54,6 +57,7 @@ flowchart LR
 | File | Responsibility |
 | --- | --- |
 | `dist/app.js` | UI, file loading, playback, playlists, worker coordination |
+| `dist/catalog.js` and `dist/music/` | Licensed excerpt metadata and MP3 assets, fetched only when selected |
 | `dist/audio.js` | Pure DSP, transition timing, fade curves, original demo synthesis |
 | `dist/analysis-worker.js` | Feature extraction off the main thread |
 | `dist/style.css` | Responsive studio interface |
@@ -75,9 +79,9 @@ Tests cover scheduling arithmetic, range validation, fade invariants, known-freq
 
 The score is a heuristic and is not calibrated to human preference. It does not perform beat alignment, time stretching, pitch shifting, phrase detection, melodic sequence comparison, or genre-independent musical key recognition. Crossfade settings affect playback but not the feature score. Uploaded audio is downmixed to mono at 22.05 kHz for both analysis and preview; preserving original stereo playback is a documented next step.
 
-Audio is kept in memory only; reselect files after reloading. Playlists live in this browser's `localStorage`, are not encrypted or account-synced, and can be lost if browser data is cleared. Exports preserve metadata, not audio. A maximum of 12 in-memory tracks (including four demos), 60 MB per input file, and 15 minutes per decoded track keeps this prototype bounded; long compressed files may still require substantial decode memory.
+Decoded audio is kept in memory only; reselect uploaded files after reloading. Built-in music can be loaded again automatically when restoring a saved pair. Playlists live in this browser's `localStorage`, are not encrypted or account-synced, and can be lost if browser data is cleared. Exports preserve metadata, not audio. A maximum of eight uploads, 22 built-in excerpts decoded on demand, and four demos, 60 MB per input file, and 15 minutes per decoded track keeps this prototype bounded; long compressed files may still require substantial decode memory.
 
-No trained model, OAuth flow, backend, telemetry, automatic catalog matching, or direct service playlist write is claimed. Google Fonts may make network requests for typography; audio processing itself stays local. See the [roadmap](docs/ROADMAP.md) for a concrete next-phase plan.
+No trained model, OAuth flow, backend, telemetry, automatic catalog matching, or direct service playlist write is claimed. Google Fonts may make network requests for typography; audio processing itself stays local. Built-in excerpts are served with the app; they are not full-song previews or a streaming-service catalog. See the [roadmap](docs/ROADMAP.md) for a concrete next-phase plan.
 
 ## Portfolio walkthrough
 
@@ -97,4 +101,5 @@ See [interview notes and suggested résumé wording](docs/PORTFOLIO.md). Avoid c
 - [Spotify Authorization Code with PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow)
 - [Apple MusicKit](https://developer.apple.com/musickit/)
 
-No third-party music, secrets, or user-uploaded audio belongs in this repository.
+Bundled third-party music is limited to the licensed excerpts documented in [Music credits](docs/MUSIC_CREDITS.md). Do not commit secrets or user-uploaded audio.
+
