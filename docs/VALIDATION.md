@@ -1,5 +1,11 @@
 # Validation record
 
+## Searchable library update — 2026-09-24
+
+- Verified case-insensitive multiword filtering and selecting a filtered result into the correct deck.
+- Verified upload-only filtering and empty-result feedback.
+- Verified Spotify and Apple Music search links preserve accented names and encode special characters. These are external search handoffs; no catalog API or streaming import is claimed.
+
 Validated on 2026-09-23.
 
 ## Automated
