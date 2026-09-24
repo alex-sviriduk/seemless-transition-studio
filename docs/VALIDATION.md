@@ -1,5 +1,13 @@
 # Validation record
 
+## Built-in catalog update — 2026-09-24
+
+- All 22 bundled MP3 excerpts decoded and loaded into deck A through the browser picker.
+- Jason Shaw / Lee Rosevere excerpts loaded into A/B; analysis produced a score and preview entered playback.
+- All 13 automated tests pass, including catalog identity/license checks and SHA-256 verification for every asset.
+- Catalog excerpts are lazy-loaded and can be restored from saved metadata; source and license links appear on each library result.
+
+
 ## Searchable library update — 2026-09-24
 
 - Verified case-insensitive multiword filtering and selecting a filtered result into the correct deck.
